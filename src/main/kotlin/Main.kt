@@ -2,13 +2,13 @@ package net.jakraes
 
 fun main() {
     val obj = JsonObject().apply {
-        type = "Object"
-        set("count", JsonPrimitive(2))
+        type = "Yippie"
+        set("what", 2)
     }
 
     val nested = JsonObject().apply {
-        set("greeting", "Hello")
-        set("active", true)
+        set("hello", "world!")
+        set("yup", true)
     }
 
     obj.set("nested", nested)

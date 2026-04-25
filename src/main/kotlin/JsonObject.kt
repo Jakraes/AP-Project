@@ -10,18 +10,11 @@ class JsonObject : JsonValue() {
 
     fun get(key: String): JsonValue? = members[key]
 
-    fun set(key: String, value: JsonValue) {
-        members[key] = value
-    }
+    fun set(key: String, value: JsonValue) { members[key] = value }
 
-    // overload for easy setting :)
-    fun set(key: String, value: Any?) {
-        members[key] = JsonPrimitive(value)
-    }
+    fun set(key: String, value: Any?) { members[key] = JsonPrimitive(value) }
 
-    fun remove(key: String) {
-        members.remove(key)
-    }
+    fun remove(key: String) { members.remove(key) }
 
     fun keys(): Set<String> = members.keys
 
@@ -33,6 +26,8 @@ class JsonObject : JsonValue() {
             if (type != null) add("\"\$type\": \"$type\"")
             members.forEach { (k, v) -> add("\"$k\": $v") }
         }
+
+        if (entries.isEmpty()) return "{}"
 
         return "{\n${entries.joinToString(",\n") { "\t$it" }}\n}"
     }
