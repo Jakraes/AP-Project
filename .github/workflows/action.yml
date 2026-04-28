@@ -9,7 +9,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     permissions:
       contents: write
 
@@ -25,8 +24,11 @@ jobs:
       - name: Grant execute permission to gradlew
         run: chmod +x gradlew
 
-      - name: Build and test
-        run: ./gradlew test fatJar
+      - name: Build, test and generate docs
+        run: ./gradlew test fatJar dokkaHtml
+
+      - name: Zip docs
+        run: zip -r build/libs/docs.zip build/dokka/html
 
       - name: Create GitHub Release
         if: github.event_name == 'push'
@@ -35,4 +37,6 @@ jobs:
           tag_name: build-${{ github.run_number }}
           name: "Build #${{ github.run_number }}"
           prerelease: true
-          files: build/libs/*-all.jar
+          files: |
+            build/libs/*-all.jar
+            build/libs/docs.zip
