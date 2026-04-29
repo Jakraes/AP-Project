@@ -7,7 +7,7 @@ class JsonObject : JsonValue() {
     internal var id: UUID? = null
     internal var type: String? = null
 
-    private val members: LinkedHashMap<String, JsonValue> = LinkedHashMap()
+    private val members = LinkedHashMap<String, JsonValue>()
 
     /** Returns the value for [key], or null if absent. */
     fun get(key: String): JsonValue? = members[key]

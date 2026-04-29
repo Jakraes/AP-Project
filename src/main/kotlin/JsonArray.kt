@@ -2,7 +2,7 @@ package net.jakraes
 
 /** A JSON array. */
 class JsonArray : JsonValue() {
-    private val members: MutableList<JsonValue> = mutableListOf()
+    private val members = mutableListOf<JsonValue>()
 
     fun get(index: Int): JsonValue = members[index]
     fun set(index: Int, value: JsonValue) { members[index] = value }

@@ -77,7 +77,7 @@ class ProJson {
         null           -> JsonPrimitive(null)
         is Iterable<*> -> JsonArray().apply {
             value.forEach { item ->
-                add(if (item != null) resolveOrRef(item) else JsonPrimitive(null))
+                add(item?.let { resolveOrRef(it) } ?: JsonPrimitive(null))
             }
         }
         else           -> resolveOrRef(value)
