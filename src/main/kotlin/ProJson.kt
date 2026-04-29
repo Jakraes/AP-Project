@@ -36,6 +36,7 @@ class ProJson {
         }
         return when (obj) {
             null           -> JsonPrimitive(null)
+            is JsonValue   -> obj
             is Boolean     -> JsonPrimitive(obj)
             is Number      -> JsonPrimitive(obj)
             is String      -> JsonPrimitive(obj)
