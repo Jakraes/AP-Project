@@ -7,22 +7,24 @@ import kotlin.reflect.full.hasAnnotation
 import kotlin.reflect.full.memberProperties
 
 /**
- * Entry point for JSON serialization.
+ * Converts any Kotlin object into a [JsonValue] tree.
  *
- * One instance = one serialization context. Reuse the same instance when serializing
- * a graph so that cross-object `$ref` links are resolved correctly.
+ * One instance = one serialization context. Reuse the same instance across a full
+ * object graph so that [$ref][JsonReference] links resolve correctly.
  */
 class ProJson {
+    // Tracks which objects have already been assigned a UUID in this context.
     private val uuids: HashMap<Any, UUID> = HashMap()
 
     /**
-     * Converts [obj] to a [JsonValue].
+     * Converts [obj] to a [JsonValue]:
+     * - null / Boolean / Number / String  →  [JsonPrimitive]
+     * - [Map]       →  [JsonObject] (no $type)
+     * - [Iterable]  →  [JsonArray]
+     * - anything else  →  [JsonObject] via reflection
      *
-     * - `null`, primitives, strings -> [JsonPrimitive]
-     * - [Map] -> [JsonObject] (no `$type`)
-     * - [Iterable] -> [JsonArray]
-     * - Any other object -> [JsonObject] via reflection, respecting [@JsonIgnore],
-     *   [@JsonProperty], [@Reference], and [@JsonString].
+     * If the class is annotated with [@JsonString][JsonString], it is serialized
+     * as a string instead.
      */
     fun toJson(obj: Any?): JsonValue {
         if (obj != null) {
@@ -43,22 +45,12 @@ class ProJson {
         }
     }
 
-    /** Returns a `$ref` stub if [obj] was already serialized, otherwise serializes it. */
-    private fun resolveOrRef(obj: Any): JsonValue {
-        val existing = uuids[obj]
-        return if (existing != null) JsonReference(existing) else toJson(obj)
+    private fun mapToJsonObject(map: Map<*, *>) = JsonObject().apply {
+        map.forEach { (k, v) -> set(k.toString(), toJson(v)) }
     }
 
-    private fun mapToJsonObject(map: Map<*, *>): JsonObject {
-        val result = JsonObject()
-        for ((k, v) in map) result.set(k.toString(), toJson(v))
-        return result
-    }
-
-    private fun iterableToJsonArray(col: Iterable<*>): JsonArray {
-        val result = JsonArray()
-        for (item in col) result.add(toJson(item))
-        return result
+    private fun iterableToJsonArray(col: Iterable<*>) = JsonArray().apply {
+        col.forEach { add(toJson(it)) }
     }
 
     private fun reflectToJsonObject(obj: Any): JsonObject {
@@ -77,10 +69,17 @@ class ProJson {
         }
     }
 
-    /** Handles a `@Reference`-annotated property value: resolves single objects or iterables. */
+    // If obj was already serialized in this context, emit a $ref instead of duplicating it.
+    private fun resolveOrRef(obj: Any): JsonValue =
+        uuids[obj]?.let { JsonReference(it) } ?: toJson(obj)
+
     private fun resolveRef(value: Any?): JsonValue = when (value) {
         null           -> JsonPrimitive(null)
-        is Iterable<*> -> JsonArray().apply { value.forEach { add(if (it != null) resolveOrRef(it) else JsonPrimitive(null)) } }
+        is Iterable<*> -> JsonArray().apply {
+            value.forEach { item ->
+                add(if (item != null) resolveOrRef(item) else JsonPrimitive(null))
+            }
+        }
         else           -> resolveOrRef(value)
     }
 }
