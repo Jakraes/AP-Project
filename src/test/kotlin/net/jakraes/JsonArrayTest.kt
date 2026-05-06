@@ -1,5 +1,6 @@
 package net.jakraes
 
+import net.jakraes.json.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

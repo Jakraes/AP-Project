@@ -1,4 +1,4 @@
-package net.jakraes
+package net.jakraes.json
 
 /** A JSON array. */
 class JsonArray : JsonValue() {

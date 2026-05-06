@@ -1,5 +1,6 @@
 package net.jakraes
 
+import net.jakraes.json.*
 import java.util.UUID
 import kotlin.reflect.full.createInstance
 import kotlin.reflect.full.findAnnotation

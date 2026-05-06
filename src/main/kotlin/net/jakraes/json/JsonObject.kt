@@ -1,8 +1,8 @@
-package net.jakraes
+package net.jakraes.json
 
 import java.util.UUID
 
-/** A JSON object (ordered key-value pairs). [id] and [type] are managed by [ProJson]. */
+/** A JSON object (ordered key-value pairs). [id] and [type] are managed by [net.jakraes.ProJson]. */
 class JsonObject : JsonValue() {
     internal var id: UUID? = null
     internal var type: String? = null

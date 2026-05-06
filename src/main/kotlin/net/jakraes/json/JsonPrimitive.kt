@@ -1,8 +1,8 @@
-package net.jakraes
+package net.jakraes.json
 
 /**
- * A JSON primitive: string, number, boolean or null
- * @param value Must be a [String], [Number], [Boolean] or null, throws otherwise
+ * A JSON primitive: string, number, boolean or null.
+ * @param value Must be a [String], [Number], [Boolean] or null, throws otherwise.
  */
 class JsonPrimitive(val value: Any?) : JsonValue() {
     init { require(value == null || value is String || value is Number || value is Boolean) }
