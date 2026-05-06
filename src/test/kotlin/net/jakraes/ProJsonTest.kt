@@ -27,9 +27,9 @@ class ProJsonTest {
 
     private val proJson = ProJson()
 
-    @Test fun `null`() = assertEquals("null", proJson.toJson(null).toString())
+    @Test fun `null input serializes to null`() = assertEquals("null", proJson.toJson(null).toString())
 
-    @Test fun primitives() {
+    @Test fun `primitive types pass through directly`() {
         assertEquals("\"hi\"", proJson.toJson("hi").toString())
         assertEquals("3.14",   proJson.toJson(3.14).toString())
         assertEquals("false",  proJson.toJson(false).toString())
@@ -40,7 +40,7 @@ class ProJsonTest {
         assertTrue(!obj.toString().contains("\$type"))
     }
 
-    @Test fun `iterable to array`() =
+    @Test fun `iterable becomes a json array`() =
         assertEquals(3, assertIs<JsonArray>(proJson.toJson(listOf(1, 2, 3))).size)
 
     @Test fun `data class has no id, regular class does`() {
@@ -57,18 +57,18 @@ class ProJsonTest {
         assertEquals(id1, id2)
     }
 
-    @Test fun JsonIgnore() =
+    @Test fun `ignored property is absent from output`() =
         assertTrue(!proJson.toJson(Renamed("v", "hidden")).toString().contains("secret"))
 
-    @Test fun JsonProperty() =
+    @Test fun `renamed property uses custom key`() =
         assertTrue(proJson.toJson(Renamed("v", "h")).toString().contains("desc"))
 
-    @Test fun Reference() {
+    @Test fun `second encounter of same object becomes ref`() {
         val child = Tree("child", emptyList())
         val arr = assertIs<JsonArray>(proJson.toJson(listOf(child, Tree("root", listOf(child)))))
         assertTrue(arr.get(1).toString().contains("\$ref"))
     }
 
-    @Test fun JsonString() =
+    @Test fun `custom string serializer formats the output`() =
         assertEquals("\"01/06/2026\"", proJson.toJson(SimpleDate(1, 6, 2026)).toString())
 }

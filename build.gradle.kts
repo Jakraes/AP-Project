@@ -3,7 +3,7 @@ plugins {
     id("org.jetbrains.dokka") version "1.9.20"
 }
 
-group = "org.example"
+group = "net.jakraes"
 version = "1.0-SNAPSHOT"
 
 repositories {

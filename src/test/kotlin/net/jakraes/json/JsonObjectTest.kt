@@ -1,28 +1,27 @@
-package net.jakraes
+package net.jakraes.json
 
-import net.jakraes.json.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 class JsonObjectTest {
 
-    @Test fun `set and get`() {
+    @Test fun `stored value is accessible by key`() {
         val obj = JsonObject().apply { set("x", JsonPrimitive(1)) }
         assertEquals("1", obj.get("x").toString())
     }
 
-    @Test fun `raw value overload`() {
+    @Test fun `primitive shorthand is stored correctly`() {
         val obj = JsonObject().apply { set("flag", true) }
         assertEquals("true", obj.get("flag").toString())
     }
 
-    @Test fun remove() {
+    @Test fun `removed key is no longer present`() {
         val obj = JsonObject().apply { set("a", JsonPrimitive(1)); remove("a") }
         assertNull(obj.get("a"))
     }
 
-    @Test fun keys() {
+    @Test fun `all inserted keys are returned`() {
         val obj = JsonObject().apply { set("a", JsonPrimitive(1)); set("b", JsonPrimitive(2)) }
         assertEquals(setOf("a", "b"), obj.keys())
     }
