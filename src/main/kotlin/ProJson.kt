@@ -8,44 +8,41 @@ import kotlin.reflect.full.hasAnnotation
 import kotlin.reflect.full.memberProperties
 
 /**
- * Converts any Kotlin object into a [JsonValue] tree.
+ * Serializes Kotlin objects into [JsonValue] trees.
  *
- * One instance = one serialization context. Reuse the same instance across a full
- * object graph so that [$ref][JsonReference] links resolve correctly.
+ * One instance = one serialization context. Reuse across a full object graph
+ * so that [JsonReference] ($ref) links resolve correctly across objects.
  */
 class ProJson {
-    // Tracks which objects have already been assigned a UUID in this context.
-    private val uuids: HashMap<Any, UUID> = HashMap()
+    private val uuids = HashMap<Any, UUID>()
 
     /**
      * Converts [obj] to a [JsonValue]:
-     * - null / Boolean / Number / String  →  [JsonPrimitive]
-     * - [Map]       →  [JsonObject] (no $type)
-     * - [Iterable]  →  [JsonArray]
-     * - anything else  →  [JsonObject] via reflection
-     *
-     * If the class is annotated with [@JsonString][JsonString], it is serialized
-     * as a string instead.
+     * - null / Boolean / Number / String → [JsonPrimitive]
+     * - [@JsonString][JsonString] class  → [JsonPrimitive] via custom serializer
+     * - [Map]        → [JsonObject] (no $type)
+     * - [Iterable]   → [JsonArray]
+     * - [JsonValue]  → returned as-is
+     * - anything else → [JsonObject] via reflection
      */
-    fun toJson(obj: Any?): JsonValue {
-        if (obj != null) {
-            obj::class.findAnnotation<JsonString>()?.let { ann ->
-                @Suppress("UNCHECKED_CAST")
-                val serializer = ann.serializer.createInstance() as JsonStringSerializer<Any>
-                return JsonPrimitive(serializer.serialize(obj))
+    fun toJson(obj: Any?): JsonValue = when {
+        obj == null      -> JsonPrimitive(null)
+        obj is JsonValue -> obj
+        obj is Boolean   -> JsonPrimitive(obj)
+        obj is Number    -> JsonPrimitive(obj)
+        obj is String    -> JsonPrimitive(obj)
+        else -> obj::class.findAnnotation<JsonString>()
+            ?.let { serializeAsString(obj, it) }
+            ?: when (obj) {
+                is Map<*, *>   -> mapToJsonObject(obj)
+                is Iterable<*> -> iterableToJsonArray(obj)
+                else           -> reflectToJsonObject(obj)
             }
-        }
-        return when (obj) {
-            null           -> JsonPrimitive(null)
-            is JsonValue   -> obj
-            is Boolean     -> JsonPrimitive(obj)
-            is Number      -> JsonPrimitive(obj)
-            is String      -> JsonPrimitive(obj)
-            is Map<*, *>   -> mapToJsonObject(obj)
-            is Iterable<*> -> iterableToJsonArray(obj)
-            else           -> reflectToJsonObject(obj)
-        }
     }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun serializeAsString(obj: Any, ann: JsonString) =
+        JsonPrimitive((ann.serializer.createInstance() as JsonStringSerializer<Any>).serialize(obj))
 
     private fun mapToJsonObject(map: Map<*, *>) = JsonObject().apply {
         map.forEach { (k, v) -> set(k.toString(), toJson(v)) }
@@ -71,16 +68,14 @@ class ProJson {
         }
     }
 
-    // If obj was already serialized in this context, emit a $ref instead of duplicating it.
+    // Returns a $ref if obj was already serialized in this context, otherwise serializes it.
     private fun resolveOrRef(obj: Any): JsonValue =
         uuids[obj]?.let { JsonReference(it) } ?: toJson(obj)
 
     private fun resolveRef(value: Any?): JsonValue = when (value) {
         null           -> JsonPrimitive(null)
         is Iterable<*> -> JsonArray().apply {
-            value.forEach { item ->
-                add(item?.let { resolveOrRef(it) } ?: JsonPrimitive(null))
-            }
+            value.forEach { add(it?.let { resolveOrRef(it) } ?: JsonPrimitive(null)) }
         }
         else           -> resolveOrRef(value)
     }
